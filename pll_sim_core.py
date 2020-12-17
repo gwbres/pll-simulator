@@ -1,4 +1,8 @@
+# maths
 import numpy as np
+
+# qt
+import pyqtgraph as pg
 
 # libs
 from signal import sinewave, dds 
@@ -20,6 +24,9 @@ class PllSimCore (object):
 
 		# DUT VCO params
 		self.vco_prev_acc = 0
+
+		# sim time
+		self.sim_start_time = pg.ptime.time()
 
 	def step (self):
 
@@ -57,3 +64,16 @@ class PllSimCore (object):
 	
 	def get_quantized_cos_lut  (self):
 		return self.get_quantized_sin_cos_lut()[1]
+	
+	def get_sim_start_time (self):
+		"""
+		Returns time where simulation was started 
+		for easy plotting
+		"""
+		return self.sim_start_time
+
+	def get_sim_time (self):
+		"""
+		Returns current 'time' in simulation
+		"""
+		return pg.ptime.time() - self.get_sim_start_time()
