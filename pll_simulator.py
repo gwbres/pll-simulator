@@ -10,6 +10,9 @@ from pll_sim_core import *
 class MainWindow (pg.GraphicsLayoutWidget):
 
 	def __init__ (self):
+		"""
+		MainWindow widget construction method
+		"""
 		super().__init__(title="title")
 
 		self.resize(1000,600)
@@ -18,12 +21,13 @@ class MainWindow (pg.GraphicsLayoutWidget):
 		# ref signal plot
 		self.addPlot(title="Ref. signal", y=[])
 
-		# dut (VCO) signal plot
+		# dut
 		self.addPlot(title="DUT (VCO)", y=[])
 
-		#self.nextRow()
-		# frequency error plot
-		# phase error plot
+		self.nextRow()
+		# phase / freq errors
+		self.addPlot(title="Phase error", y=[])
+		self.addPlot(title="Frequency error", y=[])
 
 		# plot customization
 		self.get_reference_plot().setClipToView(True)
@@ -31,13 +35,31 @@ class MainWindow (pg.GraphicsLayoutWidget):
 		#self.get_reference_plot().setLimits(xMax=0)
 
 		# sim core env
-		self.core = PllSimCore(work_size=1024, sample_rate=1)
+		self.core = PllSimCore(work_size=10, sample_rate=1
 
 	def get_reference_plot (self):
+		"""
+		Returns plot for Reference signal
+		"""
 		return self.getItem(0, 0)
 
 	def get_dut_plot (self):
+		"""
+		Returns plot for DUT signal
+		"""
 		return self.getItem(0, 1)
+
+	def get_phase_error_plot (self):
+		"""
+		Returns plot for Phase error between DUT & Ref.
+		"""
+		return self.getItem(1, 0)
+
+	def get_frequency_error_plot (self):
+		"""
+		Returns plot for Frequency error between DUT & Ref.
+		"""
+		return self.getItem(1, 1)
 
 	def run_step (self):
 		"""
@@ -49,13 +71,19 @@ class MainWindow (pg.GraphicsLayoutWidget):
 
 	def scroll_plot (self, plot, data):
 		"""
-		Scrolls given plot, appends given data
-		"""
-		now = self.core.get_sim_time()
-		start = self.core.get_sim_start_time()
-		for curve in plot.curves:
-			curve.setPos(-(now-start), 0)
-			curve.setData(data)
+		Scrolls given plot by appending given data
+		""" 
+		curve = plot.curves[0]
+		prev_data = curve.getData()
+		
+		if len(prev_data[0]) > 0:
+			x0 = prev_data[0][-1] +1
+			x = np.concatenate((prev_data[0], range(x0,x0+self.core.get_work_size())))
+			y = np.concatenate((prev_data[1], data))
+			plot.curves[0].setData(x,y)
+		
+		else: # first plot
+			plot.curves[0].setData(data)
 
 if __name__ == "__main__":
 	app = QtGui.QApplication([])

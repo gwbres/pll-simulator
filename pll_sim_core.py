@@ -28,24 +28,44 @@ class PllSimCore (object):
 		# sim time
 		self.sim_start_time = pg.ptime.time()
 
-	def step (self):
+	def step (self, open_loop=True):
+		"""
+		Take one step into the simulation
+		Generates new Reference signal chunk
+		Produces new DUT signal chunk in open or closed loop
+		Deduces new phase & frequency errors
+		"""
 
 		# new data
 		dut_vco = []
 		ref_signal = []
 
+		mean_freq = 10 # [Hz]
+
 		# ref signal
-		ref_signal = sinewave(1, 1/10, size=10)
+		ref_signal = sinewave(1, 1/mean_freq, size=self.work_size)
 		
-		# vco sim
-		for i in range (10):
-			[point, self.vco_prev_acc] = dds(10, 0, self.get_quantized_sin_lut(), prev_accumulator=self.vco_prev_acc)
+		# generate a couple samples from the VCO
+		for i in range (self.work_size):
+			[point, self.vco_prev_acc] = dds(0.1, 0, self.get_quantized_sin_lut(), prev_accumulator=self.vco_prev_acc)
 			dut_vco.append(point)
+
+		# determine new phase, freq errors
+		
 
 		return [ref_signal, dut_vco]
 
 	def get_work_size (self):
+		"""
+		Returns nb of samples per simulation steps
+		"""
 		return self.work_size
+
+	def get_sim_step_duration (self):
+		"""
+		Returns time duration that a simulation step represents
+		"""
+		return self.work_size * 1.0/self.sample_rate
 
 	def get_sample_rate (self):
 		"""
@@ -60,9 +80,19 @@ class PllSimCore (object):
 		return self.sine_cos_lut
 
 	def get_quantized_sin_lut  (self):
+		"""
+		Returns quantized Sin(x) lut to be used
+		in this simulation,
+		based on DDS implementation settings
+		"""
 		return self.get_quantized_sin_cos_lut()[0]
 	
 	def get_quantized_cos_lut  (self):
+		"""
+		Returns quantized Cos(x) lut to be used
+		in this simulation,
+		based on DDS implementation settings
+		"""
 		return self.get_quantized_sin_cos_lut()[1]
 	
 	def get_sim_start_time (self):
